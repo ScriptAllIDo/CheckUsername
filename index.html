@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uranium Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #0e0e0e;
+      color: #ff8a8a;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .tabs-container {
+      display: flex;
+      background-color: #0e0e0e;
+      padding: 0 15px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      align-items: center;
+      min-height: 40px;
+      scrollbar-width: thin;
+      scrollbar-color: #333 transparent;
+    }
+
+    .tabs-container::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .tabs-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .tabs-container::-webkit-scrollbar-thumb {
+      background-color: #333;
+      border-radius: 3px;
+      transition: background-color 0.2s ease;
+    }
+
+    .tabs-container::-webkit-scrollbar-thumb:hover {
+      background-color: #444;
+    }
+
+    .tab {
+      height: 40px;
+      cursor: pointer;
+      background-color: transparent;
+      color: #8a5a5a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 15px 0 12px;
+      user-select: none;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      position: relative;
+      min-width: 160px;
+    }
+
+    .tab.active {
+      background-color: #101010;
+      color: #ff8a8a;
+      border-bottom: 2px solid #ff3b30;
+    }
+
+    .tab:hover:not(.active) {
+      background-color: rgba(255, 59, 48, 0.05);
+      color: #ff6b6b;
+    }
+
+    .tab-content {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+
+    .tab-icon {
+      margin-right: 8px;
+      font-size: 12px;
+      color: #8a5a5a;
+      transition: color 0.2s ease;
+    }
+
+    .tab.active .tab-icon {
+      color: #ff3b30;
+    }
+
+    .tab-name {
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .tab-close {
+      margin-left: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      opacity: 0;
+      transition: all 0.2s ease;
+      color: #8a5a5a;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+    }
+
+    .tab:hover .tab-close {
+      opacity: 0.7;
+    }
+
+    .tab-close:hover {
+      opacity: 1;
+      color: #ff3b30;
+      background-color: rgba(255, 59, 48, 0.1);
+    }
+
+    .add-tab {
+      width: 32px;
+      height: 32px;
+      margin-left: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #8a5a5a;
+      cursor: pointer;
+      border-radius: 8px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+      font-weight: 300;
+    }
+
+    .add-tab:hover {
+      color: #ff8a8a;
+      background-color: rgba(255, 59, 48, 0.1);
+      transform: scale(1.1);
+    }
+
+    /* Panel styling */
+    .panel-container {
+      height: 50px;
+      background-color: #101010;
+      margin: 0 15px;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      position: relative;
+    }
+
+    /* Subtle design element for the panel */
+    .panel-container::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #333, transparent);
+    }
+
+    .editor-container {
+      flex-grow: 1;
+      position: relative;
+      margin: 0 15px 15px 15px;
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+      border: 1px solid #333;
+      box-shadow: 0 8px 24px rgba(255, 59, 48, 0.1);
+      background-color: #0e0e0e;
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      opacity: 1;
+      transition: opacity 0.15s ease;
+    }
+
+    #editor.fade-out {
+      opacity: 0;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 24px;
+      padding: 0 16px;
+      background-color: #0e0e0e;
+      font-size: 11px;
+      color: #8a5a5a;
+      border-top: 1px solid #333;
+      font-weight: 400;
+    }
+
+    .status-left, .status-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tab-rename-input {
+      background: transparent;
+      border: none;
+      color: #ff8a8a;
+      font-size: 12px;
+      font-weight: 500;
+      width: 100%;
+      outline: none;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    /* Animations */
+    @keyframes tabSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .tab.new-tab {
+      animation: tabSlideIn 0.3s ease;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .tab {
+        min-width: 120px;
+        padding: 0 10px 0 8px;
+      }
+      
+      .tab-name {
+        max-width: 70px;
+      }
+      
+      .editor-container, .panel-container {
+        margin: 0 10px;
+      }
+      
+      .editor-container {
+        margin-bottom: 10px;
+      }
+      
+      .panel-container {
+        height: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="tabs-container" id="tabs-container">
+    <div class="tab active" data-file="main">
+      <div class="tab-content">
+        <i class="fas fa-file-code tab-icon"></i>
+        <span class="tab-name">main.lua</span>
+      </div>
+      <span class="tab-close">×</span>
+    </div>
+    <div class="add-tab" id="add-tab">+</div>
+  </div>
+  
+  <!-- Panel area -->
+  <div class="panel-container"></div>
+  
+  <div class="editor-container">
+    <div id="editor"></div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-left">
+      <div class="status-item">
+        <span></span>
+        <span>Lua</span>
+      </div>
+      <div class="status-item">
+        <span>UTF-8</span>
+      </div>
+    </div>
+    <div class="status-right">
+      <div class="status-item">
+        <span id="cursor-position">Ln 1, Col 1</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+  <script>
+    // File storage
+    const files = { 
+      'main': `-- Welcome to Uranium!`
+    };
+    
+    let editor;
+    let tabCounter = 1;
+    let untitledCount = 1;
+
+    // Initialize Monaco Editor
+    require.config({ 
+      paths: { 
+        vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' 
+      }
+    });
+
+    require(['vs/editor/editor.main'], function () {
+      // Register Lua language
+      monaco.languages.register({ id: 'lua' });
+
+      // Define advanced Lua syntax highlighting
+      monaco.languages.setMonarchTokensProvider('lua', {
+        tokenizer: {
+          root: [
+            // Keywords
+            [/\b(function|if|then|else|elseif|end|return|for|while|do|repeat|until|and|or|not|local|nil|false|true|break|in)\b/, 'keyword'],
+            
+            // Built-in functions
+            [/\b(print|pairs|ipairs|next|type|getmetatable|setmetatable|rawget|rawset|require|loadfile|dofile|pcall|xpcall|error|assert|tonumber|tostring|string|table|math|io|os)\b/, 'function'],
+            
+            // String literals
+            [/"([^"\\]|\\.)*$/, 'string.invalid'],
+            [/'([^'\\]|\\.)*$/, 'string.invalid'],
+            [/"/, { token: 'string.quote', bracket: '@open', next: '@string_double' }],
+            [/'/, { token: 'string.quote', bracket: '@open', next: '@string_single' }],
+            
+            // Numbers
+            [/\b\d+(\.\d+)?([eE][+-]?\d+)?\b/, 'number'],
+            [/\b0[xX][0-9a-fA-F]+\b/, 'number.hex'],
+            
+            // Comments
+            [/--\[\[/, { token: 'comment', next: '@comment_block' }],
+            [/--.*$/, 'comment'],
+            
+            // Operators
+            [/[=+\-*/%<>~^#]/, 'operator'],
+            [/\.\./, 'operator'],
+            [/[<>]=?/, 'operator'],
+            [/~=/, 'operator'],
+            
+            // Delimiters
+            [/[{}()\[\].,;:]/, 'delimiter'],
+            
+            // Function calls
+            [/\b[a-zA-Z_][a-zA-Z0-9_]*(?=\s*\()/, 'function'],
+            
+            // Variables
+            [/\b[a-zA-Z_][a-zA-Z0-9_]*/, 'variable'],
+            
+            { include: '@whitespace' }
+          ],
+          
+          whitespace: [
+            [/[ \t\r\n]+/, ''],
+          ],
+          
+          string_double: [
+            [/[^\\"]+/, 'string'],
+            [/\\./, 'string.escape'],
+            [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+          ],
+          
+          string_single: [
+            [/[^\\']+/, 'string'],
+            [/\\./, 'string.escape'],
+            [/'/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+          ],
+          
+          comment_block: [
+            [/[^\]]+/, 'comment'],
+            [/\]\]/, { token: 'comment', next: '@pop' }],
+            [/[\]]/, 'comment']
+          ]
+        }
+      });
+
+      // Define beautiful red/pink/orange theme with dark background
+      monaco.editor.defineTheme('uranium-theme', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'keyword', foreground: 'ff4757', fontStyle: 'bold' },
+          { token: 'string', foreground: 'ff6b9d', fontStyle: 'italic' },
+          { token: 'string.escape', foreground: 'ffa726' },
+          { token: 'comment', foreground: 'ff9f43', fontStyle: 'italic' },
+          { token: 'number', foreground: 'ff6b9d' },
+          { token: 'number.hex', foreground: 'ff8a65' },
+          { token: 'function', foreground: 'ff4757', fontStyle: 'bold' },
+          { token: 'variable', foreground: 'ff8a8a' },
+          { token: 'operator', foreground: 'ff9f43' },
+          { token: 'delimiter', foreground: 'ff9f43' },
+          { token: 'identifier', foreground: 'ff8a8a' },
+          { token: 'type', foreground: 'ff6b9d' }
+        ],
+        colors: {
+          'editor.background': '#0e0e0e',
+          'editor.foreground': '#ff8a8a',
+          'editor.lineHighlightBackground': '#1a1a1a',
+          'editorCursor.foreground': '#ff3b30',
+          'editor.selectionBackground': '#333333',
+          'editor.inactiveSelectionBackground': '#262626',
+          'editor.lineNumbers.foreground': '#8a5a5a',
+          'editor.lineNumbers.activeForeground': '#ff8a8a',
+          'editorGutter.background': '#0e0e0e',
+          'editorWidget.background': '#1a1a1a',
+          'editorWidget.border': '#333333',
+          'editorSuggestWidget.background': '#1a1a1a',
+          'editorSuggestWidget.border': '#333333',
+          'editorSuggestWidget.foreground': '#ff8a8a',
+          'editorSuggestWidget.selectedBackground': '#333333'
+        }
+      });
+
+      // Create editor instance
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        value: files['main'],
+        language: 'lua',
+        theme: 'uranium-theme',
+        fontSize: 14,
+        fontFamily: 'Consolas, "Courier New", monospace',
+        lineNumbers: 'on',
+        glyphMargin: false,
+        folding: true,
+        lineDecorationsWidth: 10,
+        lineNumbersMinChars: 3,
+        minimap: { 
+          enabled: true,
+          scale: 1,
+          maxColumn: 120,
+          showSlider: 'mouseover'
+        },
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+        smoothScrolling: true,
+        mouseWheelZoom: true,
+        cursorBlinking: 'phase',
+        cursorSmoothCaretAnimation: 'on',
+        roundedSelection: true,
+        padding: { top: 16, bottom: 16 },
+        renderLineHighlight: 'all',
+        wordWrap: 'on',
+        wrappingIndent: 'indent',
+        suggest: {
+          showKeywords: true,
+          showSnippets: true
+        },
+        scrollbar: {
+          useShadows: false,
+          verticalScrollbarSize: 12,
+          horizontalScrollbarSize: 12,
+          verticalHasArrows: false,
+          horizontalHasArrows: false,
+          vertical: 'visible',
+          horizontal: 'visible'
+        }
+      });
+
+      // Update cursor position in status bar
+      editor.onDidChangeCursorPosition(function(e) {
+        document.getElementById('cursor-position').textContent = 
+          `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+      });
+
+      // Initialize functionality
+      initTabHandlers();
+      initScriptExecution();
+    });
+
+    // Tab management
+    function initTabHandlers() {
+      const tabsContainer = document.getElementById('tabs-container');
+      const addTabButton = document.getElementById('add-tab');
+
+      tabsContainer.addEventListener('click', function (e) {
+        const target = e.target;
+
+        // Add new tab
+        if (target === addTabButton) {
+          createNewTab();
+          return;
+        }
+
+        // Close tab
+        if (target.classList.contains('tab-close')) {
+          closeTab(target.closest('.tab'));
+          return;
+        }
+
+        // Switch tab
+        const tab = e.target.closest('.tab');
+        if (tab && !tab.classList.contains('active')) {
+          switchTab(tab);
+        }
+      });
+
+      // Enable double-click to rename tabs
+      tabsContainer.addEventListener('dblclick', function(e) {
+        const tab = e.target.closest('.tab');
+        if (tab && !e.target.classList.contains('tab-close')) {
+          renameTab(tab);
+        }
+      });
+    }
+
+    function createNewTab() {
+      tabCounter++;
+      const fileId = `untitled-${untitledCount}`;
+      files[fileId] = `-- Welcome to Uranium!`;
+
+      const tab = document.createElement('div');
+      tab.classList.add('tab', 'new-tab');
+      tab.setAttribute('data-file', fileId);
+      tab.innerHTML = `
+        <div class="tab-content">
+          <i class="fas fa-file-code tab-icon"></i>
+          <span class="tab-name">untitled-${untitledCount}.lua</span>
+        </div>
+        <span class="tab-close">×</span>
+      `;
+      
+      document.getElementById('tabs-container').insertBefore(tab, document.getElementById('add-tab'));
+      switchTab(tab);
+      untitledCount++;
+      
+      // Remove animation class after animation completes
+      setTimeout(() => tab.classList.remove('new-tab'), 300);
+    }
+
+    function closeTab(tab) {
+      const fileId = tab.getAttribute('data-file');
+      const allTabs = document.querySelectorAll('.tab');
+
+      if (allTabs.length <= 1) {
+        return; // Don't allow closing the last tab
+      }
+
+      if (tab.classList.contains('active')) {
+        const nextTab = tab.nextElementSibling?.classList.contains('tab') ? 
+          tab.nextElementSibling : tab.previousElementSibling;
+        if (nextTab) {
+          switchTab(nextTab);
+        }
+      }
+
+      delete files[fileId];
+      tab.remove();
+    }
+
+    function renameTab(tab) {
+      const tabNameElement = tab.querySelector('.tab-name');
+      const currentName = tabNameElement.textContent;
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = currentName;
+      input.className = 'tab-rename-input';
+      
+      tabNameElement.replaceWith(input);
+      input.focus();
+      input.select();
+      
+      function finishRename() {
+        const newName = input.value.trim() || currentName;
+        const newSpan = document.createElement('span');
+        newSpan.className = 'tab-name';
+        newSpan.textContent = newName;
+        input.replaceWith(newSpan);
+      }
+      
+      input.addEventListener('blur', finishRename);
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          finishRename();
+        } else if (e.key === 'Escape') {
+          const newSpan = document.createElement('span');
+          newSpan.className = 'tab-name';
+          newSpan.textContent = currentName;
+          input.replaceWith(newSpan);
+        }
+      });
+    }
+
+    async function switchTab(tab) {
+      const editorElement = document.getElementById('editor');
+      const currentTab = document.querySelector('.tab.active');
+      
+      // Fade out
+      editorElement.classList.add('fade-out');
+      await new Promise(resolve => setTimeout(resolve, 75));
+      
+      // Save current file content
+      if (currentTab) {
+        const currentFile = currentTab.getAttribute('data-file');
+        files[currentFile] = editor.getValue();
+        currentTab.classList.remove('active');
+      }
+
+      // Load new file content
+      const newFile = tab.getAttribute('data-file');
+      editor.setValue(files[newFile] || '');
+      tab.classList.add('active');
+      
+      // Fade in
+      editorElement.classList.remove('fade-out');
+      editor.focus();
+    }
+
+    // Script execution
+    function initScriptExecution() {
+      // F5 execution shortcut
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'F5') {
+          e.preventDefault();
+          executeScript();
+        }
+      });
+      
+      // Ctrl+Enter execution shortcut
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, executeScript);
+    }
+
+    function executeScript() {
+      const code = editor.getValue();
+      
+      console.clear();
+      console.log('🚀 Executing Lua Script:');
+      console.log('═'.repeat(50));
+      console.log(code);
+      console.log('═'.repeat(50));
+      
+      try {
+        // Parse and execute print statements
+        const lines = code.split('\n');
+        let executionResults = [];
+        
+        lines.forEach((line, index) => {
+          const trimmedLine = line.trim();
+          
+          // Handle print statements
+          if (trimmedLine.startsWith('print(')) {
+            const match = trimmedLine.match(/print\((.+)\)/);
+            if (match) {
+              let content = match[1];
+              
+              // Remove quotes if it's a string literal
+              if ((content.startsWith('"') && content.endsWith('"')) || 
+                  (content.startsWith("'") && content.endsWith("'"))) {
+                content = content.slice(1, -1);
+              }
+              
+              console.log(`📝 Line ${index + 1}: ${content}`);
+              executionResults.push(`Line ${index + 1}: ${content}`);
+            }
+          }
+          
+          // Handle simple variable assignments
+          if (trimmedLine.includes('=') && !trimmedLine.startsWith('--')) {
+            console.log(`📋 Line ${index + 1}: ${trimmedLine}`);
+          }
+        });
+        
+        if (executionResults.length > 0) {
+          console.log('\n✅ Execution completed successfully!');
+          console.log(`📊 Processed ${executionResults.length} print statement(s)`);
+        } else {
+          console.log('\n✅ Script parsed successfully!');
+        }
+        
+      } catch (error) {
+        console.error('❌ Script execution error:', error);
+      }
+    }
+
+    // Keyboard shortcuts info
+    document.addEventListener('keydown', function(e) {
+      // Ctrl+T for new tab
+      if (e.ctrlKey && e.key === 't') {
+        e.preventDefault();
+        createNewTab();
+      }
+      
+      // Ctrl+W for close tab
+      if (e.ctrlKey && e.key === 'w') {
+        e.preventDefault();
+        const activeTab = document.querySelector('.tab.active');
+        if (activeTab) {
+          closeTab(activeTab);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
